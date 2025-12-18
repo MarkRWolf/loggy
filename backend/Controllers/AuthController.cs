@@ -12,7 +12,7 @@ namespace Loggy.Api.Controllers;
 
 [ApiController]
 [Route("auth")]
-public class AuthController(AppDbContext db, PasswordHasher hasher) : ControllerBase
+public class AuthController(AppDbContext db, PasswordHasher hasher, InputValidator validator) : ControllerBase
 {
     public record SignupReq(string Email, string Password);
     public record LoginReq(string Email, string Password);
@@ -21,18 +21,23 @@ public class AuthController(AppDbContext db, PasswordHasher hasher) : Controller
     public async Task<IActionResult> Signup([FromBody] SignupReq r)
     {
         var email = (r.Email ?? "").Trim().ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(r.Password))
-            return BadRequest();
+        var password = r.Password ?? "";
+
+        if (!validator.IsValidEmail(email))
+            return BadRequest("Invalid email");
+
+        if (!validator.IsValidPassword(password))
+            return BadRequest("Invalid password");
 
         var exists = await db.Users.AnyAsync(x => x.Email == email);
         if (exists)
-            return Conflict();
+            return Conflict("Email already exists");
 
         var user = new User
         {
             Id = Guid.NewGuid(),
             Email = email,
-            PasswordHash = hasher.Hash(r.Password),
+            PasswordHash = hasher.Hash(password),
             CreatedAt = DateTime.UtcNow
         };
 
@@ -48,14 +53,19 @@ public class AuthController(AppDbContext db, PasswordHasher hasher) : Controller
     public async Task<IActionResult> Login([FromBody] LoginReq r)
     {
         var email = (r.Email ?? "").Trim().ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(r.Password))
-            return BadRequest();
+        var password = r.Password ?? "";
+
+        if (!validator.IsValidEmail(email))
+            return BadRequest("Invalid email");
+
+        if (string.IsNullOrWhiteSpace(password))
+            return BadRequest("Invalid password");
 
         var user = await db.Users.SingleOrDefaultAsync(x => x.Email == email);
         if (user == null)
             return Unauthorized();
 
-        if (!hasher.Verify(user.PasswordHash, r.Password))
+        if (!hasher.Verify(user.PasswordHash, password))
             return Unauthorized();
 
         await SignIn(user);

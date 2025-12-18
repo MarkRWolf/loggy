@@ -32,6 +32,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+// DI
+builder.Services.AddScoped<InputValidator>();
+
+// Finish setup; build
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
