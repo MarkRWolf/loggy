@@ -40,7 +40,7 @@ public class JobsController(AppDbContext db) : ControllerBase
         var company = (r.Company ?? "").Trim();
         var status = (r.Status ?? "").Trim().ToLowerInvariant();
         var url = string.IsNullOrWhiteSpace(r.Url) ? null : r.Url.Trim();
-        var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes;
+        var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes.Trim();
 
         if (title.Length == 0) return BadRequest("Title is required");
         if (company.Length == 0) return BadRequest("Company is required");
@@ -51,7 +51,7 @@ public class JobsController(AppDbContext db) : ControllerBase
         if (company.Length > 200) return BadRequest("Company too long");
         if (url is not null && url.Length > 2048) return BadRequest("Url too long");
         if (url is not null && !IsValidHttpUrl(url)) return BadRequest("Invalid url");
-        if (notes is not null && notes.Length > 20000) return BadRequest("Notes too long");
+        if (notes is not null && notes.Length > 1000) return BadRequest("Notes too long");
 
         var now = DateTime.UtcNow;
 
@@ -114,7 +114,7 @@ public class JobsController(AppDbContext db) : ControllerBase
         var company = (r.Company ?? "").Trim();
         var status = (r.Status ?? "").Trim().ToLowerInvariant();
         var url = string.IsNullOrWhiteSpace(r.Url) ? null : r.Url.Trim();
-        var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes;
+        var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes.Trim();
 
         if (title.Length == 0) return BadRequest("Title is required");
         if (company.Length == 0) return BadRequest("Company is required");
@@ -125,7 +125,7 @@ public class JobsController(AppDbContext db) : ControllerBase
         if (company.Length > 200) return BadRequest("Company too long");
         if (url is not null && url.Length > 2048) return BadRequest("Url too long");
         if (url is not null && !IsValidHttpUrl(url)) return BadRequest("Invalid url");
-        if (notes is not null && notes.Length > 20000) return BadRequest("Notes too long");
+        if (notes is not null && notes.Length > 1000) return BadRequest("Notes too long");
 
         job.Title = title;
         job.Company = company;

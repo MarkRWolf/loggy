@@ -36,6 +36,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Company).IsRequired().HasMaxLength(200);
             e.Property(x => x.Url).HasMaxLength(2048);
             e.Property(x => x.Status).IsRequired().HasMaxLength(32);
+            e.Property(x => x.Notes).HasMaxLength(1000);
 
             e.Property(x => x.Relevance).IsRequired();
             e.Property(x => x.CreatedAt).IsRequired();
