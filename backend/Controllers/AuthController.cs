@@ -12,51 +12,50 @@ namespace Loggy.Api.Controllers;
 
 [ApiController]
 [Route("auth")]
-public class AuthController : ControllerBase
+public class AuthController(AppDbContext db, PasswordHasher hasher) : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly PasswordHasher _hasher;
-
-    public AuthController(AppDbContext db, PasswordHasher hasher)
-    {
-        _db = db;
-        _hasher = hasher;
-    }
+    public record SignupReq(string Email, string Password);
+    public record LoginReq(string Email, string Password);
 
     [HttpPost("signup")]
-    public async Task<IActionResult> Signup([FromBody] User input)
+    public async Task<IActionResult> Signup([FromBody] SignupReq r)
     {
-        if (string.IsNullOrWhiteSpace(input.Email) || string.IsNullOrWhiteSpace(input.PasswordHash))
+        var email = (r.Email ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(r.Password))
             return BadRequest();
 
-        var exists = await _db.Users.AnyAsync(x => x.Email == input.Email);
+        var exists = await db.Users.AnyAsync(x => x.Email == email);
         if (exists)
             return Conflict();
 
         var user = new User
         {
             Id = Guid.NewGuid(),
-            Email = input.Email,
-            PasswordHash = _hasher.Hash(input.PasswordHash),
+            Email = email,
+            PasswordHash = hasher.Hash(r.Password),
             CreatedAt = DateTime.UtcNow
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
 
         await SignIn(user);
 
-        return Ok();
+        return StatusCode(201);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] User input)
+    public async Task<IActionResult> Login([FromBody] LoginReq r)
     {
-        var user = await _db.Users.SingleOrDefaultAsync(x => x.Email == input.Email);
+        var email = (r.Email ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(r.Password))
+            return BadRequest();
+
+        var user = await db.Users.SingleOrDefaultAsync(x => x.Email == email);
         if (user == null)
             return Unauthorized();
 
-        if (!_hasher.Verify(user.PasswordHash, input.PasswordHash))
+        if (!hasher.Verify(user.PasswordHash, r.Password))
             return Unauthorized();
 
         await SignIn(user);
@@ -68,7 +67,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync();
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Ok();
     }
 
@@ -85,7 +84,7 @@ public class AuthController : ControllerBase
 
     private async Task SignIn(User user)
     {
-        var claims = new List<Claim>
+        var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email)
@@ -94,7 +93,7 @@ public class AuthController : ControllerBase
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
 
-        await HttpContext.SignInAsync(principal);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
     }
 }
 
