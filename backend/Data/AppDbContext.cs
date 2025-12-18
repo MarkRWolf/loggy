@@ -16,19 +16,39 @@ public class AppDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Email).IsUnique();
+
+            e.Property(x => x.Email).IsRequired();
+            e.Property(x => x.PasswordHash).IsRequired();
+            e.Property(x => x.CreatedAt).IsRequired();
         });
 
         modelBuilder.Entity<Job>(e =>
         {
             e.HasKey(x => x.Id);
+
             e.HasIndex(x => x.UserId);
             e.HasIndex(x => x.CreatedAt);
             e.HasIndex(x => x.Company);
 
+            e.Property(x => x.UserId).IsRequired();
+
+            e.Property(x => x.Title).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Company).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Url).HasMaxLength(2048);
+            e.Property(x => x.Status).IsRequired().HasMaxLength(32);
+
+            e.Property(x => x.Relevance).IsRequired();
+            e.Property(x => x.CreatedAt).IsRequired();
+            e.Property(x => x.UpdatedAt).IsRequired();
+
+            e.HasCheckConstraint("ck_jobs_relevance", "\"Relevance\" >= 1 AND \"Relevance\" <= 5");
+            e.HasCheckConstraint("ck_jobs_status",
+                "\"Status\" IN ('wishlist','applied','interview','rejected','offer')");
+
             e.HasOne(x => x.User)
-             .WithMany()
-             .HasForeignKey(x => x.UserId)
-             .OnDelete(DeleteBehavior.Cascade);
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
