@@ -186,3 +186,127 @@ Built last. Purely presentational.
 
 Anything beyond this is v2.
 
+
+## Loggy – v2 Implementation Plan
+
+This section captures **intentionally deferred work**.
+Nothing here blocks v1. Nothing here is partially implemented in v1.
+
+---
+
+## Goals (v2)
+
+* Harden security
+* Improve scalability and UX
+* Prepare for future features without redesign
+
+---
+
+## 1. Security Hardening
+
+### Authentication & Sessions
+
+* Add password reset flow
+* Add session rotation on login
+* Add optional session expiration configuration
+* Add account-level rate limiting (per user, not only per IP)
+
+### CSRF Protection
+
+* Replace Origin-based checks with token-based CSRF protection
+* Enforce CSRF validation on all unsafe methods
+* Keep Origin checks as secondary defense
+
+---
+
+## 2. Data Protection & Secrets
+
+### Data Protection Keys
+
+* Explicitly configure data protection
+* Set application name
+* Persist keys to a stable backing store
+* Ensure all replicas share the same key set
+
+### Secrets Management
+
+* Centralize secret configuration
+* Allow secret rotation without application changes
+* Validate required secrets on startup
+
+---
+
+## 3. Backend API Improvements
+
+### Jobs API
+
+* Add pagination to job listing
+* Add soft-delete support
+* Add optimistic concurrency checks
+* Add bulk operations (status update, delete)
+
+### API Structure
+
+* Introduce API versioning
+* Standardize error response format
+* Add request/response validation errors
+
+---
+
+## 4. Database Enhancements
+
+### Schema
+
+* Add `deletedAt` to jobs
+* Add version or concurrency column
+* Review index usage based on real queries
+
+### Maintenance
+
+* Background cleanup for soft-deleted jobs
+* Migration strategy for future schema changes
+
+---
+
+## 5. Frontend Improvements
+
+### Dashboard UX
+
+* Empty states and error states
+* Optimistic updates for CRUD
+* Persistent user preferences (sort, filter)
+
+### Performance
+
+* Reduce overfetching
+* Add loading skeletons
+* Cache job lists where appropriate
+
+---
+
+## 6. Observability & Operations
+
+### Monitoring
+
+* Structured request logging
+* Metrics for request latency and errors
+* Health and readiness probes
+
+### Reliability
+
+* Graceful shutdown handling
+* Startup checks for DB and dependencies
+* Better error visibility in production
+
+---
+
+## Done Definition (v2)
+
+* Security hardened
+* API scalable and versioned
+* UX smoother and more resilient
+* App prepared for future expansion
+
+Anything beyond this is v3.
+
+---
