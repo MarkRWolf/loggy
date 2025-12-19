@@ -25,7 +25,7 @@ builder.Services.AddPortalCors(builder.Environment);
 
 builder.Services.AddAuthRateLimiting(builder.Environment);
 
-builder.Services.AddCookieAuth();
+builder.Services.AddCookieAuth(builder.Environment);
 
 builder.Services.AddAuthorization();
 
@@ -45,7 +45,7 @@ app.UseForwardedHeadersIfProd();
 
 app.UseHstsIfProd();
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirectionIfProd();
 
 app.UseRateLimiter();
 
@@ -142,7 +142,7 @@ static class ServiceSetup
         return services;
     }
 
-    public static IServiceCollection AddCookieAuth(this IServiceCollection services)
+    public static IServiceCollection AddCookieAuth(this IServiceCollection services, IHostEnvironment env)
     {
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -150,7 +150,9 @@ static class ServiceSetup
                 options.Cookie.Name = "loggy.auth";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Strict;
-                options.Cookie.SecurePolicy = options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SecurePolicy = env.IsDevelopment()
+                    ? CookieSecurePolicy.SameAsRequest
+                    : CookieSecurePolicy.Always;
                 options.LoginPath = "/auth/login";
 
                 options.Events = new CookieAuthenticationEvents
@@ -202,6 +204,13 @@ static class PipelineSetup
     {
         if (!app.Environment.IsDevelopment())
             app.UseHsts();
+        return app;
+    }
+
+    public static IApplicationBuilder UseHttpsRedirectionIfProd(this WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+            app.UseHttpsRedirection();
         return app;
     }
 
