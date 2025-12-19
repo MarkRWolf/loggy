@@ -42,9 +42,12 @@ public class AppDbContext : DbContext
             e.Property(x => x.CreatedAt).IsRequired();
             e.Property(x => x.UpdatedAt).IsRequired();
 
-            e.HasCheckConstraint("ck_jobs_relevance", "\"Relevance\" >= 1 AND \"Relevance\" <= 5");
-            e.HasCheckConstraint("ck_jobs_status",
-                "\"Status\" IN ('wishlist','applied','interview','rejected','offer')");
+            e.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_jobs_relevance", "\"Relevance\" >= 1 AND \"Relevance\" <= 5");
+                t.HasCheckConstraint("ck_jobs_status",
+                    "\"Status\" IN ('wishlist','applied','interview','rejected','offer')");
+            });
 
             e.HasOne(x => x.User)
                 .WithMany()

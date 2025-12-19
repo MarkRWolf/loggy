@@ -87,16 +87,21 @@ public class JobsController(AppDbContext db) : ControllerBase
 
         IQueryable<Job> q = db.Jobs.AsNoTracking().Where(x => x.UserId == userId);
 
-        q = s switch
+        try
         {
-            "createdat" => d == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt),
-            "title" => d == "asc" ? q.OrderBy(x => x.Title) : q.OrderByDescending(x => x.Title),
-            "company" => d == "asc" ? q.OrderBy(x => x.Company) : q.OrderByDescending(x => x.Company),
-            "relevance" => d == "asc" ? q.OrderBy(x => x.Relevance) : q.OrderByDescending(x => x.Relevance),
-            _ => null
-        };
-
-        if (q is null) return BadRequest("Invalid sort");
+            q = s switch
+            {
+                "createdat" => d == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt),
+                "title" => d == "asc" ? q.OrderBy(x => x.Title) : q.OrderByDescending(x => x.Title),
+                "company" => d == "asc" ? q.OrderBy(x => x.Company) : q.OrderByDescending(x => x.Company),
+                "relevance" => d == "asc" ? q.OrderBy(x => x.Relevance) : q.OrderByDescending(x => x.Relevance),
+                _ => throw new ArgumentException()
+            };
+        }
+        catch
+        {
+            return BadRequest("Invalid sort");
+        }
 
         var jobs = await q.Select(x => ToDto(x)).ToListAsync();
         return Ok(jobs);
