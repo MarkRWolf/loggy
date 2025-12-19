@@ -3,10 +3,10 @@ using System.Threading.RateLimiting;
 using Loggy.Api.Data;
 using Loggy.Api.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +31,6 @@ builder.Services.AddAuthorization();
 
 // Swagger (dev only)
 builder.Services.AddSwaggerGenStuff();
-
 
 // DI
 builder.Services.AddScoped<InputValidator>();
@@ -150,9 +149,17 @@ static class ServiceSetup
                 options.Cookie.Name = "loggy.auth";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = SameSiteMode.Strict;
-                options.Cookie.SecurePolicy = env.IsDevelopment()
-                    ? CookieSecurePolicy.SameAsRequest
-                    : CookieSecurePolicy.Always;
+
+                if (!env.IsDevelopment())
+                {
+                    options.Cookie.Domain = ".loggy.dk";
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                }
+                else
+                {
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                }
+
                 options.LoginPath = "/auth/login";
 
                 options.Events = new CookieAuthenticationEvents
