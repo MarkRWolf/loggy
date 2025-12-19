@@ -14,101 +14,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Database
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddDatabase(builder.Configuration);
 
 // Auth
 builder.Services.AddScoped<PasswordHasher>();
 
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.Configure<ForwardedHeadersOptions>(o =>
-    {
-        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-        o.ForwardLimit = 1;
+builder.Services.AddForwardedHeadersIfProd(builder.Environment, builder.Configuration);
 
-        var proxies = builder.Configuration["KNOWN_PROXIES"];
-        if (!string.IsNullOrWhiteSpace(proxies))
-        {
-            foreach (var raw in proxies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                if (IPAddress.TryParse(raw, out var ip))
-                    o.KnownProxies.Add(ip);
-            }
-        }
-    });
-}
+builder.Services.AddPortalCors(builder.Environment);
 
-builder.Services.AddCors(o =>
-{
-    o.AddPolicy("portal", p =>
-        p.WithOrigins(builder.Environment.IsDevelopment()
-            ? new[] { "http://localhost:3000", "https://portal.loggy.dk" }
-            : new[] { "https://portal.loggy.dk" })
-         .AllowAnyHeader()
-         .AllowAnyMethod()
-         .AllowCredentials());
-});
+builder.Services.AddAuthRateLimiting(builder.Environment);
 
-builder.Services.AddRateLimiter(o =>
-{
-    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
-    {
-        var path = ctx.Request.Path.Value ?? "";
-        var isAuth =
-            path.Equals("/auth/login", StringComparison.OrdinalIgnoreCase) ||
-            path.Equals("/auth/register", StringComparison.OrdinalIgnoreCase);
-
-        if (!isAuth)
-            return RateLimitPartition.GetNoLimiter("no-limit");
-
-        var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-        return RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: ip,
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = builder.Environment.IsDevelopment() ? 50 : 10,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            });
-    });
-});
-
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "loggy.auth";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Strict;
-        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
-            ? CookieSecurePolicy.SameAsRequest
-            : CookieSecurePolicy.Always;
-        options.LoginPath = "/auth/login";
-
-        // Prevent redirect response on Unauthorized
-        options.Events = new CookieAuthenticationEvents
-        {
-            OnRedirectToLogin = ctx =>
-            {
-                ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                return Task.CompletedTask;
-            },
-            OnRedirectToAccessDenied = ctx =>
-            {
-                ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                return Task.CompletedTask;
-            }
-        };
-    });
+builder.Services.AddCookieAuth();
 
 builder.Services.AddAuthorization();
 
 // Swagger (dev only)
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGenStuff();
 
 
 // DI
@@ -117,21 +39,11 @@ builder.Services.AddScoped<InputValidator>();
 // Finish setup; build
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwaggerIfDev();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseForwardedHeaders();
-}
+app.UseForwardedHeadersIfProd();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
+app.UseHstsIfProd();
 
 app.UseHttpsRedirection();
 
@@ -141,43 +53,194 @@ app.UseCors("portal");
 
 app.UseAuthentication();
 
-app.Use(async (ctx, next) =>
-{
-    if (ctx.User?.Identity?.IsAuthenticated == true)
-    {
-        if (HttpMethods.IsPost(ctx.Request.Method) ||
-            HttpMethods.IsPut(ctx.Request.Method) ||
-            HttpMethods.IsPatch(ctx.Request.Method) ||
-            HttpMethods.IsDelete(ctx.Request.Method))
-        {
-            var origin = ctx.Request.Headers.Origin.ToString();
-
-            if (builder.Environment.IsDevelopment())
-            {
-                if (!origin.Equals("http://localhost:3000", StringComparison.OrdinalIgnoreCase) &&
-                    !origin.Equals("https://portal.loggy.dk", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return;
-                }
-            }
-            else
-            {
-                if (!origin.Equals("https://portal.loggy.dk", StringComparison.OrdinalIgnoreCase))
-                {
-                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return;
-                }
-            }
-        }
-    }
-
-    await next();
-});
+app.UseOriginGuard(builder.Environment);
 
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+static class ServiceSetup
+{
+    public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration config)
+    {
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseNpgsql(config.GetConnectionString("Default")));
+        return services;
+    }
+
+    public static IServiceCollection AddForwardedHeadersIfProd(this IServiceCollection services, IHostEnvironment env, IConfiguration config)
+    {
+        if (env.IsDevelopment())
+            return services;
+
+        services.Configure<ForwardedHeadersOptions>(o =>
+        {
+            o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            o.ForwardLimit = 1;
+
+            var proxies = config["KNOWN_PROXIES"];
+            if (!string.IsNullOrWhiteSpace(proxies))
+            {
+                foreach (var raw in proxies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (IPAddress.TryParse(raw, out var ip))
+                        o.KnownProxies.Add(ip);
+                }
+            }
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddPortalCors(this IServiceCollection services, IHostEnvironment env)
+    {
+        services.AddCors(o =>
+        {
+            o.AddPolicy("portal", p =>
+                p.WithOrigins(env.IsDevelopment()
+                    ? new[] { "http://localhost:3000" }
+                    : new[] { "https://portal.loggy.dk" })
+                 .AllowAnyHeader()
+                 .AllowAnyMethod()
+                 .AllowCredentials());
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddAuthRateLimiting(this IServiceCollection services, IHostEnvironment env)
+    {
+        services.AddRateLimiter(o =>
+        {
+            o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+            {
+                var path = ctx.Request.Path.Value ?? "";
+                var isAuth =
+                    path.Equals("/auth/login", StringComparison.OrdinalIgnoreCase) ||
+                    path.Equals("/auth/signup", StringComparison.OrdinalIgnoreCase);
+
+                if (!isAuth)
+                    return RateLimitPartition.GetNoLimiter("no-limit");
+
+                var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: ip,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = env.IsDevelopment() ? 50 : 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    });
+            });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddCookieAuth(this IServiceCollection services)
+    {
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.Cookie.Name = "loggy.auth";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Strict;
+                options.Cookie.SecurePolicy = options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.LoginPath = "/auth/login";
+
+                options.Events = new CookieAuthenticationEvents
+                {
+                    OnRedirectToLogin = ctx =>
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    },
+                    OnRedirectToAccessDenied = ctx =>
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return Task.CompletedTask;
+                    }
+                };
+            });
+
+        return services;
+    }
+
+    public static IServiceCollection AddSwaggerGenStuff(this IServiceCollection services)
+    {
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+        return services;
+    }
+}
+
+static class PipelineSetup
+{
+    public static IApplicationBuilder UseSwaggerIfDev(this WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+            return app;
+
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        return app;
+    }
+
+    public static IApplicationBuilder UseForwardedHeadersIfProd(this WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+            app.UseForwardedHeaders();
+        return app;
+    }
+
+    public static IApplicationBuilder UseHstsIfProd(this WebApplication app)
+    {
+        if (!app.Environment.IsDevelopment())
+            app.UseHsts();
+        return app;
+    }
+
+    public static IApplicationBuilder UseOriginGuard(this WebApplication app, IHostEnvironment env)
+    {
+        app.Use(async (ctx, next) =>
+        {
+            if (ctx.User?.Identity?.IsAuthenticated == true)
+            {
+                if (HttpMethods.IsPost(ctx.Request.Method) ||
+                    HttpMethods.IsPut(ctx.Request.Method) ||
+                    HttpMethods.IsPatch(ctx.Request.Method) ||
+                    HttpMethods.IsDelete(ctx.Request.Method))
+                {
+                    var origin = ctx.Request.Headers.Origin.ToString();
+
+                    if (env.IsDevelopment())
+                    {
+                        if (!origin.Equals("http://localhost:3000", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!origin.Equals("https://portal.loggy.dk", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            await next();
+        });
+
+        return app;
+    }
+}
 
