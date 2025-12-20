@@ -1,46 +1,35 @@
-export type ApiError = {
-  status: number
-  message: string
-}
+const BFF_PREFIX = "/api"
 
-const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "") ||
-  "http://localhost:5000"
-
-async function readError(res: Response): Promise<string> {
-  try {
-    const t = await res.text()
-    return t || res.statusText
-  } catch {
-    return res.statusText
-  }
-}
+type Ok<T> = { ok: true; data: T }
+type Err = { ok: false; error: { status: number; message: string } }
 
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit
-): Promise<{ ok: true; data: T } | { ok: false; error: ApiError }> {
-  const res = await fetch(`${API_BASE}${path}`, {
+): Promise<Ok<T> | Err> {
+  const url = `${BFF_PREFIX}${path.startsWith("/") ? path : `/${path}`}`
+
+  const res = await fetch(url, {
     ...init,
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
+    cache: "no-store",
   })
 
   if (!res.ok) {
-    return {
-      ok: false,
-      error: { status: res.status, message: await readError(res) },
-    }
+    const msg = await res.text().catch(() => "")
+    return { ok: false, error: { status: res.status, message: msg || res.statusText } }
   }
 
-  const raw = await res.text()
-  if (!raw) {
-    return { ok: true, data: undefined as T }
-  }
+  const raw = await res.text().catch(() => "")
+  if (!raw) return { ok: true, data: undefined as T }
 
-  return { ok: true, data: JSON.parse(raw) as T }
+  try {
+    return { ok: true, data: JSON.parse(raw) as T }
+  } catch {
+    return { ok: true, data: raw as unknown as T }
+  }
 }
 
