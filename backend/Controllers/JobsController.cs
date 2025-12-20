@@ -15,8 +15,34 @@ public class JobsController(AppDbContext db) : ControllerBase
     private static readonly HashSet<string> AllowedStatus =
         new(StringComparer.OrdinalIgnoreCase) { "wishlist", "applied", "interview", "rejected", "offer" };
 
-    public record CreateJobReq(string Title, string Company, string? Url, string Status, int Relevance, string? Notes);
-    public record UpdateJobReq(string Title, string Company, string? Url, string Status, int Relevance, string? Notes);
+    private static readonly HashSet<string> AllowedApplicationSource =
+        new(StringComparer.OrdinalIgnoreCase) { "posted", "unsolicited", "referral", "recruiter", "internal", "other" };
+
+    public record CreateJobReq(
+        string Title,
+        string Company,
+        string? Url,
+        string Status,
+        int Relevance,
+        string? Notes,
+        DateTime? AppliedAt,
+        string? ApplicationSource,
+        string? Location,
+        string? ContactName
+    );
+
+    public record UpdateJobReq(
+        string Title,
+        string Company,
+        string? Url,
+        string Status,
+        int Relevance,
+        string? Notes,
+        DateTime? AppliedAt,
+        string? ApplicationSource,
+        string? Location,
+        string? ContactName
+    );
 
     public record JobDto(
         Guid Id,
@@ -27,6 +53,9 @@ public class JobsController(AppDbContext db) : ControllerBase
         int Relevance,
         string? Notes,
         DateTime? AppliedAt,
+        string ApplicationSource,
+        string? Location,
+        string? ContactName,
         DateTime CreatedAt,
         DateTime UpdatedAt
     );
@@ -42,16 +71,27 @@ public class JobsController(AppDbContext db) : ControllerBase
         var url = string.IsNullOrWhiteSpace(r.Url) ? null : r.Url.Trim();
         var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes.Trim();
 
+        var source = string.IsNullOrWhiteSpace(r.ApplicationSource) ? "posted" : r.ApplicationSource.Trim().ToLowerInvariant();
+        var location = string.IsNullOrWhiteSpace(r.Location) ? null : r.Location.Trim();
+        var contactName = string.IsNullOrWhiteSpace(r.ContactName) ? null : r.ContactName.Trim();
+
+        var appliedAt = NormalizeUtc(r.AppliedAt);
+
         if (title.Length == 0) return BadRequest("Title is required");
         if (company.Length == 0) return BadRequest("Company is required");
         if (!AllowedStatus.Contains(status)) return BadRequest("Invalid status");
         if (r.Relevance is < 1 or > 5) return BadRequest("Relevance must be 1-5");
+
+        if (!AllowedApplicationSource.Contains(source)) return BadRequest("Invalid applicationSource");
 
         if (title.Length > 200) return BadRequest("Title too long");
         if (company.Length > 200) return BadRequest("Company too long");
         if (url is not null && url.Length > 2048) return BadRequest("Url too long");
         if (url is not null && !IsValidHttpUrl(url)) return BadRequest("Invalid url");
         if (notes is not null && notes.Length > 1000) return BadRequest("Notes too long");
+
+        if (location is not null && location.Length > 200) return BadRequest("Location too long");
+        if (contactName is not null && contactName.Length > 120) return BadRequest("ContactName too long");
 
         var now = DateTime.UtcNow;
 
@@ -65,7 +105,10 @@ public class JobsController(AppDbContext db) : ControllerBase
             Status = status,
             Relevance = r.Relevance,
             Notes = notes,
-            AppliedAt = null,
+            AppliedAt = appliedAt,
+            ApplicationSource = source,
+            Location = location,
+            ContactName = contactName,
             CreatedAt = now,
             UpdatedAt = now
         };
@@ -121,10 +164,18 @@ public class JobsController(AppDbContext db) : ControllerBase
         var url = string.IsNullOrWhiteSpace(r.Url) ? null : r.Url.Trim();
         var notes = string.IsNullOrWhiteSpace(r.Notes) ? null : r.Notes.Trim();
 
+        var source = string.IsNullOrWhiteSpace(r.ApplicationSource) ? "posted" : r.ApplicationSource.Trim().ToLowerInvariant();
+        var location = string.IsNullOrWhiteSpace(r.Location) ? null : r.Location.Trim();
+        var contactName = string.IsNullOrWhiteSpace(r.ContactName) ? null : r.ContactName.Trim();
+
+        var appliedAt = NormalizeUtc(r.AppliedAt);
+
         if (title.Length == 0) return BadRequest("Title is required");
         if (company.Length == 0) return BadRequest("Company is required");
         if (!AllowedStatus.Contains(status)) return BadRequest("Invalid status");
         if (r.Relevance is < 1 or > 5) return BadRequest("Relevance must be 1-5");
+
+        if (!AllowedApplicationSource.Contains(source)) return BadRequest("Invalid applicationSource");
 
         if (title.Length > 200) return BadRequest("Title too long");
         if (company.Length > 200) return BadRequest("Company too long");
@@ -132,12 +183,21 @@ public class JobsController(AppDbContext db) : ControllerBase
         if (url is not null && !IsValidHttpUrl(url)) return BadRequest("Invalid url");
         if (notes is not null && notes.Length > 1000) return BadRequest("Notes too long");
 
+        if (location is not null && location.Length > 200) return BadRequest("Location too long");
+        if (contactName is not null && contactName.Length > 120) return BadRequest("ContactName too long");
+
         job.Title = title;
         job.Company = company;
         job.Url = url;
         job.Status = status;
         job.Relevance = r.Relevance;
         job.Notes = notes;
+
+        job.AppliedAt = appliedAt;
+        job.ApplicationSource = source;
+        job.Location = location;
+        job.ContactName = contactName;
+
         job.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
@@ -175,6 +235,9 @@ public class JobsController(AppDbContext db) : ControllerBase
         j.Relevance,
         j.Notes,
         j.AppliedAt,
+        j.ApplicationSource,
+        j.Location,
+        j.ContactName,
         j.CreatedAt,
         j.UpdatedAt
     );
@@ -183,6 +246,16 @@ public class JobsController(AppDbContext db) : ControllerBase
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return false;
         return u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps;
+    }
+
+    private static DateTime? NormalizeUtc(DateTime? dt)
+    {
+        if (dt is null) return null;
+
+        if (dt.Value.Kind == DateTimeKind.Utc) return dt.Value;
+        if (dt.Value.Kind == DateTimeKind.Unspecified) return DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc);
+
+        return dt.Value.ToUniversalTime();
     }
 }
 

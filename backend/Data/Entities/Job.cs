@@ -15,6 +15,10 @@ public class Job
 
     public DateTime? AppliedAt { get; set; }
 
+    public string ApplicationSource { get; set; } = "posted";
+    public string? Location { get; set; }
+    public string? ContactName { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
