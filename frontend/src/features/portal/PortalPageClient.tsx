@@ -14,7 +14,7 @@ import JobsTable from "@/features/portal/components/JobsTable"
 import PortalSidebar from "@/features/portal/components/PortalSidebar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { ArrowDownUp, Plus, RefreshCw } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -152,7 +152,7 @@ export default function PortalPageClient({
         />
 
         <div className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             {err ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
                 {err}
@@ -190,57 +190,95 @@ export default function PortalPageClient({
               />
             ) : null}
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Tabs value={qs.tab} onValueChange={(v) => qs.setTab(v as any)}>
-                <TabsList className="h-10 rounded-2xl bg-secondary p-1">
-                  <TabsTrigger value="all" className="rounded-2xl data-[state=active]:bg-card">All</TabsTrigger>
-                  <TabsTrigger value="wishlist" className="rounded-2xl data-[state=active]:bg-card">Wishlist</TabsTrigger>
-                  <TabsTrigger value="applied" className="rounded-2xl data-[state=active]:bg-card">Applied</TabsTrigger>
-                  <TabsTrigger value="interview" className="rounded-2xl data-[state=active]:bg-card">Interview</TabsTrigger>
-                  <TabsTrigger value="offer" className="rounded-2xl data-[state=active]:bg-card">Offer</TabsTrigger>
-                  <TabsTrigger value="rejected" className="rounded-2xl data-[state=active]:bg-card">Rejected</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              <div className="flex items-center gap-2">
-                <Select value={qs.sortKey} onValueChange={(v) => qs.setSort(v as SortKey)}>
-                  <SelectTrigger className="h-10 w-[170px] rounded-2xl border-input bg-card">
-                    <SelectValue placeholder="Sort" />
+            <div className="flex flex-col mt-3 gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="sm:hidden">
+                <Select
+                  modal={false}
+                  value={qs.tab}
+                  onValueChange={(v) => qs.setTab(v as TabKey)}
+                >
+                  <SelectTrigger className="h-10 w-full rounded-2xl border-input bg-card">
+                    <SelectValue placeholder="Filter" />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="createdAt">Date added</SelectItem>
-                    <SelectItem value="title">Title</SelectItem>
-                    <SelectItem value="company">Company</SelectItem>
-                    <SelectItem value="relevance">Relevance</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="wishlist">Wishlist</SelectItem>
+                    <SelectItem value="applied">Applied</SelectItem>
+                    <SelectItem value="interview">Interview</SelectItem>
+                    <SelectItem value="offer">Offer</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
 
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-2xl border-input bg-card px-4"
-                  onClick={qs.toggleDir}
-                >
-                  {qs.sortDir === "asc" ? "Asc" : "Desc"}
-                </Button>
+              <div className="hidden sm:block">
+                <Tabs value={qs.tab} onValueChange={(v) => qs.setTab(v as any)}>
+                  <TabsList className="h-10 rounded-2xl bg-secondary p-1">
+                    <TabsTrigger value="all" className="rounded-2xl data-[state=active]:bg-card">All</TabsTrigger>
+                    <TabsTrigger value="wishlist" className="rounded-2xl data-[state=active]:bg-card">Wishlist</TabsTrigger>
+                    <TabsTrigger value="applied" className="rounded-2xl data-[state=active]:bg-card">Applied</TabsTrigger>
+                    <TabsTrigger value="interview" className="rounded-2xl data-[state=active]:bg-card">Interview</TabsTrigger>
+                    <TabsTrigger value="offer" className="rounded-2xl data-[state=active]:bg-card">Offer</TabsTrigger>
+                    <TabsTrigger value="rejected" className="rounded-2xl data-[state=active]:bg-card">Rejected</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-2xl border-input bg-card px-4"
-                  onClick={() => router.refresh()}
-                >
-                  Refresh
-                </Button>
+              <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                <div className="min-w-0 flex-1 sm:flex-none">
+                  <Select
+                    modal={false}
+                    value={qs.sortKey}
+                    onValueChange={(v) => qs.setSort(v as SortKey)}
+                  >
+                    <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-input bg-card sm:w-[170px]">
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="createdAt">Date added</SelectItem>
+                      <SelectItem value="title">Title</SelectItem>
+                      <SelectItem value="company">Company</SelectItem>
+                      <SelectItem value="relevance">Relevance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                <Button
-                  className="h-10 rounded-2xl bg-stone-900 px-4 text-stone-50 hover:bg-stone-800"
-                  onClick={() => {
-                    setErr(null)
-                    form.openCreate()
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  New
-                </Button>
+                <div className="flex flex-none items-center justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    className="h-10 rounded-2xl border-input bg-card px-3"
+                    onClick={qs.toggleDir}
+                    aria-label="Toggle sort direction"
+                    title={qs.sortDir === "asc" ? "Ascending" : "Descending"}
+                  >
+                    <ArrowDownUp className="h-4 w-4" />
+                    <span className="text-sm">
+                      {qs.sortDir === "asc" ? "Asc" : "Desc"}
+                    </span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-10 w-10 rounded-2xl border-input bg-card p-0"
+                    onClick={() => router.refresh()}
+                    aria-label="Refresh"
+                    title="Refresh"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    className="h-10 w-10 rounded-2xl bg-stone-900 p-0 text-stone-50 hover:bg-stone-800"
+                    onClick={() => {
+                      setErr(null)
+                      form.openCreate()
+                    }}
+                    aria-label="New"
+                    title="New"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
