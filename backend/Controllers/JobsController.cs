@@ -120,7 +120,12 @@ public class JobsController(AppDbContext db) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] string? sort, [FromQuery] string? dir)
+    public async Task<IActionResult> List(
+        [FromQuery] string? sort,
+        [FromQuery] string? dir,
+        [FromQuery] string? q,
+        [FromQuery] string? tab
+    )
     {
         if (!TryGetUserId(out var userId)) return Unauthorized();
 
@@ -128,16 +133,35 @@ public class JobsController(AppDbContext db) : ControllerBase
         var d = (dir ?? "desc").Trim().ToLowerInvariant();
         if (d is not ("asc" or "desc")) return BadRequest("Invalid dir");
 
-        IQueryable<Job> q = db.Jobs.AsNoTracking().Where(x => x.UserId == userId);
+        var query = (q ?? "").Trim();
+        if (query.Length > 200) query = query[..200];
+
+        var t = (tab ?? "").Trim().ToLowerInvariant();
+        if (t.Length != 0 && t != "all" && !AllowedStatus.Contains(t)) return BadRequest("Invalid tab");
+
+        IQueryable<Job> baseQ = db.Jobs.AsNoTracking().Where(x => x.UserId == userId);
+
+        if (t.Length != 0 && t != "all")
+            baseQ = baseQ.Where(x => x.Status == t);
+
+        if (query.Length != 0)
+        {
+            var like = $"%{EscapeLike(query)}%";
+            baseQ = baseQ.Where(x =>
+                EF.Functions.ILike(x.Title, like) ||
+                EF.Functions.ILike(x.Company, like) ||
+                EF.Functions.ILike(x.Status, like)
+            );
+        }
 
         try
         {
-            q = s switch
+            baseQ = s switch
             {
-                "createdat" => d == "asc" ? q.OrderBy(x => x.CreatedAt) : q.OrderByDescending(x => x.CreatedAt),
-                "title" => d == "asc" ? q.OrderBy(x => x.Title) : q.OrderByDescending(x => x.Title),
-                "company" => d == "asc" ? q.OrderBy(x => x.Company) : q.OrderByDescending(x => x.Company),
-                "relevance" => d == "asc" ? q.OrderBy(x => x.Relevance) : q.OrderByDescending(x => x.Relevance),
+                "createdat" => d == "asc" ? baseQ.OrderBy(x => x.CreatedAt) : baseQ.OrderByDescending(x => x.CreatedAt),
+                "title" => d == "asc" ? baseQ.OrderBy(x => x.Title) : baseQ.OrderByDescending(x => x.Title),
+                "company" => d == "asc" ? baseQ.OrderBy(x => x.Company) : baseQ.OrderByDescending(x => x.Company),
+                "relevance" => d == "asc" ? baseQ.OrderBy(x => x.Relevance) : baseQ.OrderByDescending(x => x.Relevance),
                 _ => throw new ArgumentException()
             };
         }
@@ -146,7 +170,7 @@ public class JobsController(AppDbContext db) : ControllerBase
             return BadRequest("Invalid sort");
         }
 
-        var jobs = await q.Select(x => ToDto(x)).ToListAsync();
+        var jobs = await baseQ.Select(x => ToDto(x)).ToListAsync();
         return Ok(jobs);
     }
 
@@ -256,6 +280,11 @@ public class JobsController(AppDbContext db) : ControllerBase
         if (dt.Value.Kind == DateTimeKind.Unspecified) return DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc);
 
         return dt.Value.ToUniversalTime();
+    }
+
+    private static string EscapeLike(string s)
+    {
+        return s.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
     }
 }
 
