@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers"
 
 const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "") ||
+  (process.env.API_BASE_URL ?? "").replace(/\/+$/, "") ||
   "http://localhost:5143"
 
 function originFromRequestHeaders(h: Headers) {
