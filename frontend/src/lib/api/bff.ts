@@ -4,10 +4,23 @@ const API_BASE =
   (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "") ||
   "http://localhost:5143"
 
-function portalOrigin() {
-  return process.env.NODE_ENV === "production"
-    ? "https://portal.loggy.dk"
-    : "http://localhost:3000"
+function originFromRequestHeaders(h: Headers) {
+  const host = (h.get("x-forwarded-host") ?? h.get("host") ?? "").trim()
+  const xfProto = (h.get("x-forwarded-proto") ?? "").trim().toLowerCase()
+
+  if (!host) {
+    return process.env.NODE_ENV === "production"
+      ? "https://portal.loggy.dk"
+      : "http://localhost:3000"
+  }
+
+  const isLocalhost =
+    host.startsWith("localhost") ||
+    host.startsWith("127.0.0.1") ||
+    host.startsWith("0.0.0.0")
+
+  const proto = xfProto || (isLocalhost ? "http" : "https")
+  return `${proto}://${host}`
 }
 
 export async function bffFetch(path: string, init?: RequestInit) {
@@ -26,7 +39,7 @@ export async function bffFetch(path: string, init?: RequestInit) {
       ...(init?.headers ?? {}),
       ...(cookieHeader ? { Cookie: cookieHeader } : {}),
       ...(host ? { "X-Forwarded-Host": host } : {}),
-      ...(isMutation ? { Origin: portalOrigin() } : {}),
+      ...(isMutation ? { Origin: originFromRequestHeaders(h) } : {}),
     },
     cache: "no-store",
   })
