@@ -42,23 +42,10 @@ import {
 } from "@/components/ui/table"
 import { apiFetch } from "@/lib/api/client"
 import { createJobSchema, updateJobSchema, jobStatusSchema } from "@/lib/job/jobSchema"
+import type { ApplicationSource, Job, JobStatus, Me } from "@/lib/job/types"
 
-type JobStatus = "wishlist" | "applied" | "interview" | "rejected" | "offer"
 type SortKey = "createdAt" | "title" | "company" | "relevance"
-
-type Job = {
-  id: string
-  title: string
-  company: string
-  url?: string
-  status: JobStatus
-  relevance: 1 | 2 | 3 | 4 | 5
-  notes?: string
-  createdAt: string
-  updatedAt: string
-}
-
-type Me = { id: string; email: string }
+type SortDir = "asc" | "desc"
 
 const statusLabel: Record<JobStatus, string> = {
   wishlist: "Wishlist",
@@ -74,6 +61,15 @@ const statusBadge: Record<JobStatus, string> = {
   interview: "bg-amber-50 text-amber-900 border-amber-200",
   rejected: "bg-rose-50 text-rose-900 border-rose-200",
   offer: "bg-emerald-50 text-emerald-900 border-emerald-200",
+}
+
+const applicationSourceLabel: Record<ApplicationSource, string> = {
+  posted: "Posted position",
+  unsolicited: "Unsolicited",
+  referral: "Referral",
+  recruiter: "Recruiter",
+  internal: "Internal",
+  other: "Other",
 }
 
 function formatDate(iso: string) {
@@ -118,7 +114,12 @@ function NavItem({
         active ? "bg-stone-900 text-stone-50" : "text-stone-700 hover:bg-stone-100"
       )}
     >
-      <span className={cn("grid h-9 w-9 place-items-center rounded-2xl", active ? "bg-white/10" : "bg-white border border-stone-200")}>
+      <span
+        className={cn(
+          "grid h-9 w-9 place-items-center rounded-2xl",
+          active ? "bg-white/10" : "bg-white border border-stone-200"
+        )}
+      >
         {icon}
       </span>
       <span>{label}</span>
@@ -126,16 +127,21 @@ function NavItem({
   )
 }
 
-export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs: Job[] }) {
+export default function PortalClient({
+  me,
+  initialJobs,
+  initialSortKey,
+  initialSortDir,
+}: {
+  me: Me
+  initialJobs: Job[]
+  initialSortKey: SortKey
+  initialSortDir: SortDir
+}) {
   const router = useRouter()
 
   const [q, setQ] = useState("")
   const [tab, setTab] = useState<JobStatus | "all">("all")
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt")
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-
-  const [jobsRaw, setJobsRaw] = useState<Job[]>(initialJobs)
-  const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   const [showForm, setShowForm] = useState(false)
@@ -147,52 +153,32 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
   const [status, setStatus] = useState<JobStatus>("wishlist")
   const [relevance, setRelevance] = useState<1 | 2 | 3 | 4 | 5>(3)
   const [notes, setNotes] = useState("")
+  const [appliedAt, setAppliedAt] = useState<string>(new Date().toISOString())
+  const [applicationSource, setApplicationSource] = useState<ApplicationSource>("posted")
+  const [location, setLocation] = useState("")
+  const [contactName, setContactName] = useState("")
   const [formBusy, setFormBusy] = useState(false)
 
-  async function loadJobs() {
-    setErr(null)
-    setLoading(true)
+  const sortKey = initialSortKey
+  const sortDir = initialSortDir
 
-    const r = await apiFetch<any[]>(`/jobs?sort=${encodeURIComponent(sortKey)}&dir=${encodeURIComponent(sortDir)}`, {
-      method: "GET",
-    })
-
-    setLoading(false)
-
-    if (!r.ok) {
-      if (r.error.status === 401) {
-        router.replace("/login")
-        return
-      }
-      setErr(r.error.message || "Failed to load jobs")
-      return
-    }
-
-    const mapped: Job[] = (r.data ?? []).map((j: any) => ({
-      id: j.id,
-      title: j.title,
-      company: j.company,
-      url: j.url ?? undefined,
-      status: j.status,
-      relevance: j.relevance,
-      notes: j.notes ?? undefined,
-      createdAt: j.createdAt,
-      updatedAt: j.updatedAt,
-    }))
-
-    setJobsRaw(mapped)
+  function pushSort(nextSort: SortKey, nextDir: SortDir) {
+    const params = new URLSearchParams()
+    params.set("sort", nextSort)
+    params.set("dir", nextDir)
+    router.push(`/?${params.toString()}`)
   }
 
   const query = q.trim().toLowerCase()
 
   const jobs = useMemo(() => {
-    let xs = jobsRaw.slice()
+    let xs = initialJobs.slice()
     if (tab !== "all") xs = xs.filter((j) => j.status === tab)
     if (query) xs = xs.filter((j) => (`${j.title} ${j.company} ${j.status}`).toLowerCase().includes(query))
     return xs
-  }, [jobsRaw, tab, query])
+  }, [initialJobs, tab, query])
 
-  const stats = useMemo(() => countByStatus(jobsRaw), [jobsRaw])
+  const stats = useMemo(() => countByStatus(initialJobs), [initialJobs])
 
   function resetForm() {
     setEditingId(null)
@@ -202,6 +188,10 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
     setStatus("wishlist")
     setRelevance(3)
     setNotes("")
+    setAppliedAt(new Date().toISOString())
+    setApplicationSource("posted")
+    setLocation("")
+    setContactName("")
   }
 
   function openCreate() {
@@ -217,6 +207,10 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
     setStatus(j.status)
     setRelevance(j.relevance)
     setNotes(j.notes ?? "")
+    setAppliedAt(j.appliedAt ?? new Date().toISOString())
+    setApplicationSource(j.applicationSource ?? "posted")
+    setLocation(j.location ?? "")
+    setContactName(j.contactName ?? "")
     setShowForm(true)
   }
 
@@ -224,7 +218,19 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
     e.preventDefault()
     setErr(null)
 
-    const payload = { title, company, url, status, relevance, notes }
+    const payload = {
+      title,
+      company,
+      url,
+      status,
+      relevance,
+      notes,
+      appliedAt,
+      applicationSource,
+      location,
+      contactName,
+    }
+
     const schema = editingId ? updateJobSchema : createJobSchema
     const parsed = schema.safeParse(payload)
 
@@ -242,6 +248,10 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
       Status: parsed.data.status,
       Relevance: parsed.data.relevance,
       Notes: parsed.data.notes ?? null,
+      AppliedAt: parsed.data.appliedAt ?? null,
+      ApplicationSource: parsed.data.applicationSource,
+      Location: parsed.data.location ?? null,
+      ContactName: parsed.data.contactName ?? null,
     })
 
     const r = editingId
@@ -261,7 +271,7 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
 
     setShowForm(false)
     resetForm()
-    await loadJobs()
+    router.refresh()
   }
 
   async function onDelete(id: string) {
@@ -275,7 +285,7 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
       setErr(r.error.message || "Delete failed")
       return
     }
-    await loadJobs()
+    router.refresh()
   }
 
   async function logout() {
@@ -509,6 +519,48 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
                       </div>
                     </div>
 
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="grid gap-2">
+                        <div className="text-xs font-medium text-stone-600">Source</div>
+                        <Select
+                          value={applicationSource}
+                          onValueChange={(v) => setApplicationSource(v as ApplicationSource)}
+                        >
+                          <SelectTrigger className="h-10 rounded-2xl border-stone-200 bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl">
+                            <SelectItem value="posted">{applicationSourceLabel.posted}</SelectItem>
+                            <SelectItem value="unsolicited">{applicationSourceLabel.unsolicited}</SelectItem>
+                            <SelectItem value="referral">{applicationSourceLabel.referral}</SelectItem>
+                            <SelectItem value="recruiter">{applicationSourceLabel.recruiter}</SelectItem>
+                            <SelectItem value="internal">{applicationSourceLabel.internal}</SelectItem>
+                            <SelectItem value="other">{applicationSourceLabel.other}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <div className="text-xs font-medium text-stone-600">Location</div>
+                        <Input
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          className="h-10 rounded-2xl border-stone-200 bg-white"
+                          placeholder="Copenhagen"
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <div className="text-xs font-medium text-stone-600">Contact</div>
+                        <Input
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          className="h-10 rounded-2xl border-stone-200 bg-white"
+                          placeholder="Jane Doe"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <Button
                         type="button"
@@ -548,7 +600,13 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
                   </Tabs>
 
                   <div className="flex items-center gap-2">
-                    <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                    <Select
+                      value={sortKey}
+                      onValueChange={(v) => {
+                        const next = v as SortKey
+                        pushSort(next, sortDir)
+                      }}
+                    >
                       <SelectTrigger className="h-10 w-[170px] rounded-2xl border-stone-200 bg-white">
                         <SelectValue placeholder="Sort" />
                       </SelectTrigger>
@@ -563,7 +621,10 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
                     <Button
                       variant="outline"
                       className="h-10 rounded-2xl border-stone-200 bg-white px-4"
-                      onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                      onClick={() => {
+                        const nextDir: SortDir = sortDir === "asc" ? "desc" : "asc"
+                        pushSort(sortKey, nextDir)
+                      }}
                     >
                       {sortDir === "asc" ? "Asc" : "Desc"}
                     </Button>
@@ -571,10 +632,9 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
                     <Button
                       variant="outline"
                       className="h-10 rounded-2xl border-stone-200 bg-white px-4"
-                      onClick={loadJobs}
-                      disabled={loading}
+                      onClick={() => router.refresh()}
                     >
-                      {loading ? "Loading…" : "Refresh"}
+                      Refresh
                     </Button>
                   </div>
                 </div>
@@ -654,7 +714,7 @@ export default function PortalClient({ me, initialJobs }: { me: Me; initialJobs:
                       {!jobs.length ? (
                         <TableRow>
                           <TableCell colSpan={6} className="py-10 text-center text-sm text-stone-600">
-                            {loading ? "Loading…" : "No results."}
+                            No results.
                           </TableCell>
                         </TableRow>
                       ) : null}

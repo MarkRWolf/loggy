@@ -5,6 +5,11 @@ export const jobStatusSchema = z.enum(
   { message: "Invalid status" }
 );
 
+export const applicationSourceSchema = z.enum(
+  ["posted", "unsolicited", "referral", "recruiter", "internal", "other"],
+  { message: "Invalid applicationSource" }
+);
+
 const httpUrlSchema = z
   .string()
   .trim()
@@ -18,6 +23,15 @@ const httpUrlSchema = z
       return false;
     }
   }, "Invalid url");
+
+const isoDateTimeSchema = z
+  .string()
+  .trim()
+  .min(1, "Invalid appliedAt")
+  .refine((s) => {
+    const d = new Date(s);
+    return !Number.isNaN(d.getTime());
+  }, "Invalid appliedAt");
 
 export const createJobSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title too long"),
@@ -37,6 +51,33 @@ export const createJobSchema = z.object({
       return s.length === 0 ? undefined : s;
     })
     .refine((v) => v == null || v.length <= 1000, "Notes too long"),
+
+  appliedAt: z
+    .union([isoDateTimeSchema, z.literal("")])
+    .optional()
+    .transform((v) => (v === "" || v == null ? undefined : v)),
+
+  applicationSource: applicationSourceSchema.default("posted"),
+
+  location: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v == null) return undefined;
+      const s = v.trim();
+      return s.length === 0 ? undefined : s;
+    })
+    .refine((v) => v == null || v.length <= 200, "Location too long"),
+
+  contactName: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v == null) return undefined;
+      const s = v.trim();
+      return s.length === 0 ? undefined : s;
+    })
+    .refine((v) => v == null || v.length <= 120, "ContactName too long"),
 });
 
 export const updateJobSchema = createJobSchema;
