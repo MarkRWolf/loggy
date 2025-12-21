@@ -60,6 +60,36 @@ public class JobsController(AppDbContext db) : ControllerBase
         DateTime UpdatedAt
     );
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> Stats()
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+
+        var rows = await db.Jobs.AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .GroupBy(x => x.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["wishlist"] = 0,
+            ["applied"] = 0,
+            ["interview"] = 0,
+            ["rejected"] = 0,
+            ["offer"] = 0,
+        };
+
+        foreach (var r in rows)
+        {
+            if (r.Status is null) continue;
+            if (!AllowedStatus.Contains(r.Status)) continue;
+            result[r.Status] = r.Count;
+        }
+
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateJobReq r)
     {
