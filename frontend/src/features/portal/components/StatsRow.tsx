@@ -21,10 +21,10 @@ export default function StatsRow({
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <Card className="rounded-3xl border-stone-200/80 bg-white p-4">
-      <div className="text-xs font-medium text-stone-600">{label}</div>
-      <div className="mt-3 text-2xl font-semibold tracking-tight text-stone-900">{value}</div>
-      <div className="mt-1 text-xs text-stone-500">Last 30 days</div>
+    <Card className="rounded-3xl border-border bg-card p-4">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">Last 30 days</div>
     </Card>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { JobStatus } from "@/lib/job/types"
 
 type SortKey = "createdAt" | "title" | "company" | "relevance"
@@ -27,9 +27,24 @@ export function useJobsQueryState({
 
   const [q, _setQ] = useState(initialQ)
   const [tab, _setTab] = useState<TabKey>(initialTab)
+  const [sortKey, _setSortKey] = useState<SortKey>(initialSortKey)
+  const [sortDir, _setSortDir] = useState<SortDir>(initialSortDir)
 
-  const sortKey = initialSortKey
-  const sortDir = initialSortDir
+  useEffect(() => {
+    _setQ(initialQ)
+  }, [initialQ])
+
+  useEffect(() => {
+    _setTab(initialTab)
+  }, [initialTab])
+
+  useEffect(() => {
+    _setSortKey(initialSortKey)
+  }, [initialSortKey])
+
+  useEffect(() => {
+    _setSortDir(initialSortDir)
+  }, [initialSortDir])
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -77,6 +92,7 @@ export function useJobsQueryState({
 
   const setSort = useCallback(
     (nextSort: SortKey) => {
+      _setSortKey(nextSort)
       router.push(buildUrl({ sort: nextSort }))
     },
     [router, buildUrl]
@@ -84,6 +100,7 @@ export function useJobsQueryState({
 
   const toggleDir = useCallback(() => {
     const nextDir: SortDir = sortDir === "asc" ? "desc" : "asc"
+    _setSortDir(nextDir)
     router.push(buildUrl({ dir: nextDir }))
   }, [router, buildUrl, sortDir])
 

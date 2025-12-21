@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { apiFetch } from "@/lib/api/client"
 import { createJobSchema, updateJobSchema } from "@/lib/job/jobSchema"
@@ -12,20 +12,25 @@ import JobsToolbar from "@/features/portal/components/JobsToolbar"
 import JobFormCard from "@/features/portal/components/JobFormCard"
 import JobsTable from "@/features/portal/components/JobsTable"
 import PortalSidebar from "@/features/portal/components/PortalSidebar"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type SortKey = "createdAt" | "title" | "company" | "relevance"
 type SortDir = "asc" | "desc"
 type TabKey = JobStatus | "all"
 
-function countByStatus(items: Job[]) {
-  const base = { wishlist: 0, applied: 0, interview: 0, rejected: 0, offer: 0 } as Record<JobStatus, number>
-  for (const j of items) base[j.status] += 1
-  return base
-}
-
 export default function PortalPageClient({
   me,
   initialJobs,
+  pipelineStats,
   initialSortKey,
   initialSortDir,
   initialTab,
@@ -33,6 +38,7 @@ export default function PortalPageClient({
 }: {
   me: Me
   initialJobs: Job[]
+  pipelineStats: Record<JobStatus, number>
   initialSortKey: SortKey
   initialSortDir: SortDir
   initialTab: TabKey
@@ -49,17 +55,6 @@ export default function PortalPageClient({
   })
 
   const form = useJobForm()
-
-  const query = qs.q.trim().toLowerCase()
-
-  const jobs = useMemo(() => {
-    let xs = initialJobs.slice()
-    if (qs.tab !== "all") xs = xs.filter((j) => j.status === qs.tab)
-    if (query) xs = xs.filter((j) => (`${j.title} ${j.company} ${j.status}`).toLowerCase().includes(query))
-    return xs
-  }, [initialJobs, qs.tab, query])
-
-  const stats = useMemo(() => countByStatus(initialJobs), [initialJobs])
 
   async function submitForm(e: React.FormEvent) {
     e.preventDefault()
@@ -145,80 +140,121 @@ export default function PortalPageClient({
   }
 
   return (
-    <div className="min-h-screen bg-[#fbfaf7]">
-      <div className="flex min-h-screen">
-        <PortalSidebar />
+    <div className="min-h-screen bg-background">
+      <PortalSidebar />
 
-        <main className="flex-1">
-          <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-4">
-              <JobsToolbar
-                email={me.email}
-                q={qs.q}
-                tab={qs.tab}
-                sortKey={qs.sortKey}
-                sortDir={qs.sortDir}
-                onQChange={qs.setQ}
-                onTabChange={qs.setTab}
-                onSortChange={qs.setSort}
-                onToggleDir={qs.toggleDir}
-                onRefresh={() => router.refresh()}
-                onNew={() => {
-                  setErr(null)
-                  form.openCreate()
-                }}
-                onLogout={logout}
+      <main className="min-h-screen lg:pl-[280px]">
+        <JobsToolbar
+          email={me.email}
+          q={qs.q}
+          onQChange={qs.setQ}
+          onLogout={logout}
+        />
+
+        <div className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-6">
+            {err ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                {err}
+              </div>
+            ) : null}
+
+            <StatsRow stats={pipelineStats} />
+
+            {form.show ? (
+              <JobFormCard
+                mode={form.editingId ? "edit" : "create"}
+                busy={form.busy}
+                title={form.title}
+                company={form.company}
+                url={form.url}
+                status={form.status}
+                relevance={form.relevance}
+                notes={form.notes}
+                appliedAt={form.appliedAt}
+                applicationSource={form.applicationSource}
+                location={form.location}
+                contactName={form.contactName}
+                setTitle={form.setTitle}
+                setCompany={form.setCompany}
+                setUrl={form.setUrl}
+                setStatus={form.setStatus}
+                setRelevance={form.setRelevance}
+                setNotes={form.setNotes}
+                setAppliedAt={form.setAppliedAt}
+                setApplicationSource={form.setApplicationSource}
+                setLocation={form.setLocation}
+                setContactName={form.setContactName}
+                onClose={form.close}
+                onSubmit={submitForm}
               />
+            ) : null}
 
-              {err ? (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
-                  {err}
-                </div>
-              ) : null}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <Tabs value={qs.tab} onValueChange={(v) => qs.setTab(v as any)}>
+                <TabsList className="h-10 rounded-2xl bg-secondary p-1">
+                  <TabsTrigger value="all" className="rounded-2xl data-[state=active]:bg-card">All</TabsTrigger>
+                  <TabsTrigger value="wishlist" className="rounded-2xl data-[state=active]:bg-card">Wishlist</TabsTrigger>
+                  <TabsTrigger value="applied" className="rounded-2xl data-[state=active]:bg-card">Applied</TabsTrigger>
+                  <TabsTrigger value="interview" className="rounded-2xl data-[state=active]:bg-card">Interview</TabsTrigger>
+                  <TabsTrigger value="offer" className="rounded-2xl data-[state=active]:bg-card">Offer</TabsTrigger>
+                  <TabsTrigger value="rejected" className="rounded-2xl data-[state=active]:bg-card">Rejected</TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-              <StatsRow stats={stats} />
+              <div className="flex items-center gap-2">
+                <Select value={qs.sortKey} onValueChange={(v) => qs.setSort(v as SortKey)}>
+                  <SelectTrigger className="h-10 w-[170px] rounded-2xl border-input bg-card">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="createdAt">Date added</SelectItem>
+                    <SelectItem value="title">Title</SelectItem>
+                    <SelectItem value="company">Company</SelectItem>
+                    <SelectItem value="relevance">Relevance</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {form.show ? (
-                <JobFormCard
-                  mode={form.editingId ? "edit" : "create"}
-                  busy={form.busy}
-                  title={form.title}
-                  company={form.company}
-                  url={form.url}
-                  status={form.status}
-                  relevance={form.relevance}
-                  notes={form.notes}
-                  appliedAt={form.appliedAt}
-                  applicationSource={form.applicationSource}
-                  location={form.location}
-                  contactName={form.contactName}
-                  setTitle={form.setTitle}
-                  setCompany={form.setCompany}
-                  setUrl={form.setUrl}
-                  setStatus={form.setStatus}
-                  setRelevance={form.setRelevance}
-                  setNotes={form.setNotes}
-                  setAppliedAt={form.setAppliedAt}
-                  setApplicationSource={form.setApplicationSource}
-                  setLocation={form.setLocation}
-                  setContactName={form.setContactName}
-                  onClose={form.close}
-                  onSubmit={submitForm}
-                />
-              ) : null}
+                <Button
+                  variant="outline"
+                  className="h-10 rounded-2xl border-input bg-card px-4"
+                  onClick={qs.toggleDir}
+                >
+                  {qs.sortDir === "asc" ? "Asc" : "Desc"}
+                </Button>
 
-              <JobsTable
-                jobs={jobs}
-                onEdit={(j) => {
-                  setErr(null)
-                  form.openEdit(j)
-                }}
-                onDelete={onDelete}
-              />
+                <Button
+                  variant="outline"
+                  className="h-10 rounded-2xl border-input bg-card px-4"
+                  onClick={() => router.refresh()}
+                >
+                  Refresh
+                </Button>
+
+                <Button
+                  className="h-10 rounded-2xl bg-stone-900 px-4 text-stone-50 hover:bg-stone-800"
+                  onClick={() => {
+                    setErr(null)
+                    form.openCreate()
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  New
+                </Button>
+              </div>
             </div>
+
+            <JobsTable
+              jobs={initialJobs}
+              onEdit={(j) => {
+                setErr(null)
+                form.openEdit(j)
+              }}
+              onDelete={onDelete}
+            />
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

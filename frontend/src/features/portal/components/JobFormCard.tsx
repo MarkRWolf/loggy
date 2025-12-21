@@ -75,12 +75,12 @@ export default function JobFormCard({
   onSubmit: (e: React.FormEvent) => void
 }) {
   return (
-    <Card className="rounded-3xl border-stone-200/80 bg-white p-4">
+    <Card className="rounded-3xl border-border bg-card p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-semibold text-stone-900">{mode === "edit" ? "Edit job" : "New job"}</div>
+        <div className="text-sm font-semibold text-foreground">{mode === "edit" ? "Edit job" : "New job"}</div>
         <Button
           variant="outline"
-          className="h-9 rounded-2xl border-stone-200 bg-white px-4"
+          className="h-9 rounded-2xl border-input bg-card px-4"
           onClick={onClose}
           disabled={busy}
         >
@@ -88,26 +88,26 @@ export default function JobFormCard({
         </Button>
       </div>
 
-      <Separator className="my-4 bg-stone-200/70" />
+      <Separator className="my-4 bg-border" />
 
       <form className="grid gap-3" onSubmit={onSubmit}>
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Title</div>
+            <div className="text-xs font-medium text-muted-foreground">Title</div>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="Frontend Developer"
             />
           </div>
 
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Company</div>
+            <div className="text-xs font-medium text-muted-foreground">Company</div>
             <Input
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="Acme"
             />
           </div>
@@ -115,17 +115,17 @@ export default function JobFormCard({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">URL</div>
+            <div className="text-xs font-medium text-muted-foreground">URL</div>
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="https://…"
             />
           </div>
 
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Status</div>
+            <div className="text-xs font-medium text-muted-foreground">Status</div>
             <Select
               value={status}
               onValueChange={(v) => {
@@ -133,7 +133,7 @@ export default function JobFormCard({
                 if (parsed.success) setStatus(parsed.data)
               }}
             >
-              <SelectTrigger className="h-10 rounded-2xl border-stone-200 bg-white">
+              <SelectTrigger className="h-10 rounded-2xl border-input bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
@@ -149,7 +149,7 @@ export default function JobFormCard({
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Relevance</div>
+            <div className="text-xs font-medium text-muted-foreground">Relevance</div>
             <Select
               value={String(relevance)}
               onValueChange={(v) => {
@@ -157,7 +157,7 @@ export default function JobFormCard({
                 if (n >= 1 && n <= 5) setRelevance(n as any)
               }}
             >
-              <SelectTrigger className="h-10 rounded-2xl border-stone-200 bg-white">
+              <SelectTrigger className="h-10 rounded-2xl border-input bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
@@ -171,31 +171,31 @@ export default function JobFormCard({
           </div>
 
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Notes</div>
+            <div className="text-xs font-medium text-muted-foreground">Notes</div>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="Optional"
             />
           </div>
         </div>
 
         <div className="grid gap-2">
-          <div className="text-xs font-medium text-stone-600">Applied at (ISO)</div>
+          <div className="text-xs font-medium text-muted-foreground">Applied at (ISO)</div>
           <Input
             value={appliedAt}
             onChange={(e) => setAppliedAt(e.target.value)}
-            className="h-10 rounded-2xl border-stone-200 bg-white"
+            className="h-10 rounded-2xl border-input bg-card"
             placeholder="2024-03-01T12:00:00Z"
           />
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Source</div>
+            <div className="text-xs font-medium text-muted-foreground">Source</div>
             <Select value={applicationSource} onValueChange={(v) => setApplicationSource(v as ApplicationSource)}>
-              <SelectTrigger className="h-10 rounded-2xl border-stone-200 bg-white">
+              <SelectTrigger className="h-10 rounded-2xl border-input bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
@@ -210,21 +210,21 @@ export default function JobFormCard({
           </div>
 
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Location</div>
+            <div className="text-xs font-medium text-muted-foreground">Location</div>
             <Input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="Copenhagen"
             />
           </div>
 
           <div className="grid gap-2">
-            <div className="text-xs font-medium text-stone-600">Contact</div>
+            <div className="text-xs font-medium text-muted-foreground">Contact</div>
             <Input
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
-              className="h-10 rounded-2xl border-stone-200 bg-white"
+              className="h-10 rounded-2xl border-input bg-card"
               placeholder="Jane Doe"
             />
           </div>
@@ -234,7 +234,7 @@ export default function JobFormCard({
           <Button
             type="button"
             variant="outline"
-            className="h-10 rounded-2xl border-stone-200 bg-white px-4"
+            className="h-10 rounded-2xl border-input bg-card px-4"
             onClick={onClose}
             disabled={busy}
           >
@@ -242,7 +242,7 @@ export default function JobFormCard({
           </Button>
           <Button
             type="submit"
-            className="h-10 rounded-2xl bg-stone-900 text-stone-50 hover:bg-stone-800"
+            className="h-10 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={busy}
           >
             {busy ? "Saving…" : "Save"}

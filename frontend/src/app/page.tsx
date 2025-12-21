@@ -51,6 +51,9 @@ export default async function Page({
   const meRes = await serverApiFetch<Me>("/auth/me", { method: "GET" })
   if (!meRes.ok) redirect("/login")
 
+  const statsRes = await serverApiFetch<Record<JobStatus, number>>("/jobs/stats", { method: "GET" })
+  if (!statsRes.ok) redirect("/login")
+
   const params = new URLSearchParams()
   params.set("sort", sort)
   params.set("dir", dir)
@@ -64,6 +67,7 @@ export default async function Page({
     <PortalPageClient
       me={meRes.data}
       initialJobs={jobsRes.data ?? []}
+      pipelineStats={statsRes.data}
       initialSortKey={sort}
       initialSortDir={dir}
       initialTab={tab}
