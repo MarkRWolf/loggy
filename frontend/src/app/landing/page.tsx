@@ -1,65 +1,299 @@
+import Link from "next/link";
 import Image from "next/image";
 
-export default function Home() {
+const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? "http://localhost:3000";
+
+export default function LandingPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href="/landing" className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center">
+              <Image src="/logo.png" alt="loggy logo" width={512} height={512} className="h-8 object-contain" />            </div>
+            <div className="leading-tight -mt-1">
+              <div className="text-sm font-semibold">Loggy</div>
+              <div className="text-xs text-muted-foreground">Job application tracker</div>
+            </div>
+          </Link>
+
+          <nav className="flex items-center gap-2">
+            <Link
+              href="/landing/about"
+              className="rounded-2xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              About
+            </Link>
+            <Link
+              href={PORTAL_URL}
+              className="rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Portal
+            </Link>
+          </nav>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      <main>
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-[-160px] h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-secondary blur-3xl" />
+            <div className="absolute left-[-200px] top-[180px] h-[420px] w-[420px] rounded-full bg-accent blur-3xl" />
+            <div className="absolute right-[-200px] top-[260px] h-[420px] w-[420px] rounded-full bg-secondary blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-14 sm:pb-18 sm:pt-18">
+            <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+              <div className="grid gap-6">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  v1 is live: track → overview → move on
+                </div>
+
+                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+                  Keep your job search organized in one place.
+                </h1>
+
+                <p className="text-base leading-7 text-muted-foreground">
+                  Loggy v1 is a fast job application tracker: add roles, update status, keep notes and context, and get
+                  a clear overview of your pipeline.
+                </p>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Link
+                    href={PORTAL_URL}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Open the portal
+                  </Link>
+                  <Link
+                    href="/landing/about"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-5 text-sm font-medium text-foreground hover:bg-accent"
+                  >
+                    Why Loggy?
+                  </Link>
+                </div>
+
+                <div className="grid gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-card text-xs">
+                      ✓
+                    </span>
+                    <span>Track jobs with title, company, URL, status, relevance, notes.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-card text-xs">
+                      ✓
+                    </span>
+                    <span>Capture applied date, source, location, and contact name.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-card text-xs">
+                      ✓
+                    </span>
+                    <span>Sort and filter server-side so the list stays reliable as it grows.</span>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-border bg-card p-5">
+                  <div className="text-sm font-semibold">Coming next</div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    We’re building the “what changed over time?” layer on top of v1.
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <RoadmapItem title="Over-time stats" text="Pipeline trends and progress over weeks/months." />
+                    <RoadmapItem title="Analytics" text="Simple insights: what converts, what doesn’t." />
+                    <RoadmapItem title="Advanced filtering" text="Saved views and more flexible queries." />
+                    <RoadmapItem title="Export to CSV" text="Take your data anywhere when you want." />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="grid gap-1">
+                    <div className="text-sm font-semibold">Portal preview</div>
+                    <div className="text-sm text-muted-foreground">
+                      What you’ll actually do in v1: keep the list updated.
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                    v1
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-5">
+                  <MiniStat label="Wishlist" value="2" />
+                  <MiniStat label="Applied" value="5" />
+                  <MiniStat label="Interview" value="1" />
+                  <MiniStat label="Offer" value="0" />
+                  <MiniStat label="Rejected" value="3" />
+                </div>
+
+                <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-background">
+                  <div className="grid grid-cols-[1.6fr_1fr_.9fr_.8fr_.8fr] items-center gap-3 border-b border-border bg-secondary px-4 py-3 text-xs font-medium text-muted-foreground">
+                    <div>Role</div>
+                    <div>Company</div>
+                    <div>Status</div>
+                    <div>Relevance</div>
+                    <div className="text-right">Added</div>
+                  </div>
+
+                  <div className="px-4 py-4">
+                    <div className="grid gap-3">
+                      <PreviewRow
+                        role="Frontend Developer"
+                        company="Acme"
+                        status="Wishlist"
+                        relevance="4/5"
+                        date="Today"
+                      />
+                      <PreviewRow
+                        role="Fullstack Engineer"
+                        company="Northwind"
+                        status="Applied"
+                        relevance="5/5"
+                        date="Yesterday"
+                      />
+                      <PreviewRow
+                        role="Software Engineer"
+                        company="Contoso"
+                        status="Interview"
+                        relevance="4/5"
+                        date="Dec 18"
+                      />
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-secondary px-4 py-3 text-sm text-muted-foreground">
+                      This preview is illustrative. The portal is the source of truth.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <FeatureCard
+                    title="Simple pipeline"
+                    text="Wishlist → Applied → Interview → Offer/Rejected."
+                  />
+                  <FeatureCard
+                    title="Context fields"
+                    text="Source, location, contact, notes, applied date."
+                  />
+                  <FeatureCard
+                    title="Fast updates"
+                    text="Add/edit quickly so your tracker stays current."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-6 pb-14">
+          <div className="rounded-3xl border border-border bg-card p-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Open Loggy and keep your pipeline honest.
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  v1 is deliberately focused: capture the truth, get the overview, and move.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+                <Link
+                  href={PORTAL_URL}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Go to the portal
+                </Link>
+                <a
+                  href="mailto:hello@loggy.dk"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-5 text-sm font-medium text-foreground hover:bg-accent"
+                >
+                  Contact
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer className="border-t border-border/70">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Loggy</span> — job application tracking, without the noise.
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <Link href="/landing/about" className="text-muted-foreground hover:text-foreground">
+                About
+              </Link>
+              <Link href={PORTAL_URL} className="text-muted-foreground hover:text-foreground">
+                Portal
+              </Link>
+              <a href="mailto:hello@loggy.dk" className="text-muted-foreground hover:text-foreground">
+                hello@loggy.dk
+              </a>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
-  );
+  )
 }
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-3xl border border-border bg-background p-4">
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">Example</div>
+    </div>
+  )
+}
+
+function PreviewRow({
+  role,
+  company,
+  status,
+  relevance,
+  date,
+}: {
+  role: string
+  company: string
+  status: string
+  relevance: string
+  date: string
+}) {
+  return (
+    <div className="grid grid-cols-[1.6fr_1fr_.9fr_.8fr_.8fr] items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+      <div className="min-w-0">
+        <div className="truncate text-sm font-medium">{role}</div>
+      </div>
+      <div className="min-w-0 truncate text-sm">{company}</div>
+      <div className="w-fit rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium">
+        {status}
+      </div>
+      <div className="text-sm text-muted-foreground">{relevance}</div>
+      <div className="text-right text-sm text-muted-foreground">{date}</div>
+    </div>
+  )
+}
+
+function FeatureCard({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-3xl border border-border bg-background p-5">
+      <div className="text-sm font-semibold">{title}</div>
+      <div className="mt-2 text-sm leading-6 text-muted-foreground">{text}</div>
+    </div>
+  )
+}
+
+function RoadmapItem({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <div className="text-sm font-medium">{title}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{text}</div>
+    </div>
+  )
+}
+
