@@ -130,8 +130,20 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+  
+    html[data-scroll-locked],
+    body[data-scroll-locked] {
+    overflow-y: scroll !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
   }
 }
 

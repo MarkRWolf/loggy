@@ -76,7 +76,7 @@ export function useJobsQueryState({
       if (debounceRef.current) clearTimeout(debounceRef.current)
 
       debounceRef.current = setTimeout(() => {
-        router.push(buildUrl({ q: nq }))
+        router.push(buildUrl({ q: nq }), { scroll: false})
       }, 300)
     },
     [router, buildUrl]
@@ -85,7 +85,7 @@ export function useJobsQueryState({
   const setTab = useCallback(
     (nextTab: TabKey) => {
       _setTab(nextTab)
-      router.push(buildUrl({ tab: nextTab }))
+      router.push(buildUrl({ tab: nextTab }), { scroll: false})
     },
     [router, buildUrl]
   )
@@ -93,7 +93,7 @@ export function useJobsQueryState({
   const setSort = useCallback(
     (nextSort: SortKey) => {
       _setSortKey(nextSort)
-      router.push(buildUrl({ sort: nextSort }))
+      router.push(buildUrl({ sort: nextSort }), { scroll: false})
     },
     [router, buildUrl]
   )
@@ -101,7 +101,7 @@ export function useJobsQueryState({
   const toggleDir = useCallback(() => {
     const nextDir: SortDir = sortDir === "asc" ? "desc" : "asc"
     _setSortDir(nextDir)
-    router.push(buildUrl({ dir: nextDir }))
+    router.push(buildUrl({ dir: nextDir }), { scroll: false})
   }, [router, buildUrl, sortDir])
 
   return useMemo(

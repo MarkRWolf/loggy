@@ -27,6 +27,22 @@ type SortKey = "createdAt" | "title" | "company" | "relevance"
 type SortDir = "asc" | "desc"
 type TabKey = JobStatus | "all"
 
+const TAB_LABEL: Record<TabKey, string> = {
+  all: "All",
+  wishlist: "Wishlist",
+  applied: "Applied",
+  interview: "Interview",
+  offer: "Offer",
+  rejected: "Rejected",
+}
+
+const SORT_LABEL: Record<SortKey, string> = {
+  createdAt: "Date added",
+  title: "Title",
+  company: "Company",
+  relevance: "Relevance",
+}
+
 export default function PortalPageClient({
   me,
   initialJobs,
@@ -192,13 +208,12 @@ export default function PortalPageClient({
 
             <div className="flex flex-col mt-3 gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="sm:hidden">
-                <Select
-                  modal={false}
-                  value={qs.tab}
-                  onValueChange={(v) => qs.setTab(v as TabKey)}
-                >
-                  <SelectTrigger className="h-10 w-full rounded-2xl border-input bg-card">
+                <Select value={qs.tab} onValueChange={(v) => qs.setTab(v as TabKey)}>
+                  <SelectTrigger className="relative h-10 w-full rounded-2xl border-input bg-card">
                     <SelectValue placeholder="Filter" />
+                    <span className="pointer-events-none absolute inset-y-0 left-3 right-10 flex items-center truncate">
+                      {TAB_LABEL[qs.tab]}
+                    </span>
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="all">All</SelectItem>
@@ -214,25 +229,36 @@ export default function PortalPageClient({
               <div className="hidden sm:block">
                 <Tabs value={qs.tab} onValueChange={(v) => qs.setTab(v as any)}>
                   <TabsList className="h-10 rounded-2xl bg-secondary p-1">
-                    <TabsTrigger value="all" className="rounded-2xl data-[state=active]:bg-card">All</TabsTrigger>
-                    <TabsTrigger value="wishlist" className="rounded-2xl data-[state=active]:bg-card">Wishlist</TabsTrigger>
-                    <TabsTrigger value="applied" className="rounded-2xl data-[state=active]:bg-card">Applied</TabsTrigger>
-                    <TabsTrigger value="interview" className="rounded-2xl data-[state=active]:bg-card">Interview</TabsTrigger>
-                    <TabsTrigger value="offer" className="rounded-2xl data-[state=active]:bg-card">Offer</TabsTrigger>
-                    <TabsTrigger value="rejected" className="rounded-2xl data-[state=active]:bg-card">Rejected</TabsTrigger>
+                    <TabsTrigger value="all" className="rounded-2xl data-[state=active]:bg-card">
+                      All
+                    </TabsTrigger>
+                    <TabsTrigger value="wishlist" className="rounded-2xl data-[state=active]:bg-card">
+                      Wishlist
+                    </TabsTrigger>
+                    <TabsTrigger value="applied" className="rounded-2xl data-[state=active]:bg-card">
+                      Applied
+                    </TabsTrigger>
+                    <TabsTrigger value="interview" className="rounded-2xl data-[state=active]:bg-card">
+                      Interview
+                    </TabsTrigger>
+                    <TabsTrigger value="offer" className="rounded-2xl data-[state=active]:bg-card">
+                      Offer
+                    </TabsTrigger>
+                    <TabsTrigger value="rejected" className="rounded-2xl data-[state=active]:bg-card">
+                      Rejected
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
 
               <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                 <div className="min-w-0 flex-1 sm:flex-none">
-                  <Select
-                    modal={false}
-                    value={qs.sortKey}
-                    onValueChange={(v) => qs.setSort(v as SortKey)}
-                  >
-                    <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-input bg-card sm:w-[170px]">
+                  <Select value={qs.sortKey} onValueChange={(v) => qs.setSort(v as SortKey)}>
+                    <SelectTrigger className="relative h-10 w-full min-w-0 rounded-2xl border-input bg-card sm:w-[170px]">
                       <SelectValue placeholder="Sort" />
+                      <span className="pointer-events-none absolute inset-y-0 left-3 right-10 flex items-center truncate">
+                        {SORT_LABEL[qs.sortKey]}
+                      </span>
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       <SelectItem value="createdAt">Date added</SelectItem>
@@ -252,9 +278,7 @@ export default function PortalPageClient({
                     title={qs.sortDir === "asc" ? "Ascending" : "Descending"}
                   >
                     <ArrowDownUp className="h-4 w-4" />
-                    <span className="text-sm">
-                      {qs.sortDir === "asc" ? "Asc" : "Desc"}
-                    </span>
+                    <span className="text-sm">{qs.sortDir === "asc" ? "Asc" : "Desc"}</span>
                   </Button>
 
                   <Button
