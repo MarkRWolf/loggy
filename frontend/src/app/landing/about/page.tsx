@@ -1,4 +1,6 @@
 import Link from "next/link"
+import logo from "@/assets/logo.png"
+import Image from "next/image";
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? "http://localhost:3000";
 
@@ -8,10 +10,15 @@ export default function AboutPage() {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/landing" className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
-              <span className="text-sm font-semibold">L</span>
+            <div className="grid h-10 w-10 place-items-center">
+              <Image
+                src={logo}
+                alt="Loggy logo"
+                className="h-8 object-contain"
+                priority
+              />
             </div>
-            <div className="leading-tight">
+            <div className="leading-tight -mt-1">
               <div className="text-sm font-semibold">Loggy</div>
               <div className="text-xs text-muted-foreground">Job application tracker</div>
             </div>

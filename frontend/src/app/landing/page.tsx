@@ -1,7 +1,58 @@
 import Link from "next/link";
 import Image from "next/image";
+import logo from "@/assets/logo.png"
+import JobsTable from "@/features/portal/components/JobsTable"
+import type { Job } from "@/lib/job/types"
 
 const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? "http://localhost:3000";
+
+const mockJobs: Job[] = [
+  {
+    id: "preview-1",
+    title: "Frontend Developer",
+    company: "Acme",
+    url: "https://example.com/jobs/frontend-developer",
+    status: "wishlist",
+    relevance: 4,
+    notes: "High-fit role",
+    appliedAt: null,
+    applicationSource: "posted",
+    location: "Copenhagen",
+    contactName: "Jane Doe",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "preview-2",
+    title: "Fullstack Engineer",
+    company: "Northwind",
+    url: "https://example.com/jobs/fullstack-engineer",
+    status: "applied",
+    relevance: 5,
+    notes: "Sent application",
+    appliedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    applicationSource: "referral",
+    location: "Remote",
+    contactName: "Sam Recruiter",
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "preview-3",
+    title: "Software Engineer",
+    company: "Contoso",
+    url: "https://example.com/jobs/software-engineer",
+    status: "interview",
+    relevance: 4,
+    notes: "Screening scheduled",
+    appliedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    applicationSource: "recruiter",
+    location: "Copenhagen",
+    contactName: "Alex Hiring",
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+]
 
 export default function LandingPage() {
   return (
@@ -10,7 +61,13 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link href="/landing" className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center">
-              <Image src="/logo.png" alt="loggy logo" width={512} height={512} className="h-8 object-contain" />            </div>
+              <Image
+                src={logo}
+                alt="Loggy logo"
+                className="h-8 object-contain"
+                priority
+              />
+            </div>
             <div className="leading-tight -mt-1">
               <div className="text-sm font-semibold">Loggy</div>
               <div className="text-xs text-muted-foreground">Job application tracker</div>
@@ -109,65 +166,22 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+              <div className="min-w-0 rounded-3xl border border-border bg-card p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                   <div className="grid gap-1">
                     <div className="text-sm font-semibold">Portal preview</div>
                     <div className="text-sm text-muted-foreground">
-                      What you’ll actually do in v1: keep the list updated.
+                      Same table component as the portal, with mock data. 
                     </div>
+                    <div className="text-xs text-muted-foreground"><i>View on desktop for best experience</i></div>
                   </div>
                   <div className="rounded-2xl border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
                     v1
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-5">
-                  <MiniStat label="Wishlist" value="2" />
-                  <MiniStat label="Applied" value="5" />
-                  <MiniStat label="Interview" value="1" />
-                  <MiniStat label="Offer" value="0" />
-                  <MiniStat label="Rejected" value="3" />
-                </div>
-
-                <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-background">
-                  <div className="grid grid-cols-[1.6fr_1fr_.9fr_.8fr_.8fr] items-center gap-3 border-b border-border bg-secondary px-4 py-3 text-xs font-medium text-muted-foreground">
-                    <div>Role</div>
-                    <div>Company</div>
-                    <div>Status</div>
-                    <div>Relevance</div>
-                    <div className="text-right">Added</div>
-                  </div>
-
-                  <div className="px-4 py-4">
-                    <div className="grid gap-3">
-                      <PreviewRow
-                        role="Frontend Developer"
-                        company="Acme"
-                        status="Wishlist"
-                        relevance="4/5"
-                        date="Today"
-                      />
-                      <PreviewRow
-                        role="Fullstack Engineer"
-                        company="Northwind"
-                        status="Applied"
-                        relevance="5/5"
-                        date="Yesterday"
-                      />
-                      <PreviewRow
-                        role="Software Engineer"
-                        company="Contoso"
-                        status="Interview"
-                        relevance="4/5"
-                        date="Dec 18"
-                      />
-                    </div>
-
-                    <div className="mt-4 rounded-2xl bg-secondary px-4 py-3 text-sm text-muted-foreground">
-                      This preview is illustrative. The portal is the source of truth.
-                    </div>
-                  </div>
+                <div className="mt-5 min-w-0">
+                  <JobsTable jobs={mockJobs} showActions={false} />
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -237,44 +251,6 @@ export default function LandingPage() {
           </div>
         </footer>
       </main>
-    </div>
-  )
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-3xl border border-border bg-background p-4">
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">Example</div>
-    </div>
-  )
-}
-
-function PreviewRow({
-  role,
-  company,
-  status,
-  relevance,
-  date,
-}: {
-  role: string
-  company: string
-  status: string
-  relevance: string
-  date: string
-}) {
-  return (
-    <div className="grid grid-cols-[1.6fr_1fr_.9fr_.8fr_.8fr] items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
-      <div className="min-w-0">
-        <div className="truncate text-sm font-medium">{role}</div>
-      </div>
-      <div className="min-w-0 truncate text-sm">{company}</div>
-      <div className="w-fit rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium">
-        {status}
-      </div>
-      <div className="text-sm text-muted-foreground">{relevance}</div>
-      <div className="text-right text-sm text-muted-foreground">{date}</div>
     </div>
   )
 }
