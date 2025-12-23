@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,15 @@ builder.Services.AddSwaggerGenStuff();
 
 // DI
 builder.Services.AddScoped<InputValidator>();
+
+if (!builder.Environment.IsDevelopment())
+{
+    Directory.CreateDirectory("/dpkeys");
+    builder.Services
+        .AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/dpkeys"))
+        .SetApplicationName("loggy");
+}
 
 // Finish setup; build
 var app = builder.Build();
