@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
+import logo from "@/assets/logo.png"
 import {
   BriefcaseBusiness,
   Building2,
@@ -48,10 +50,15 @@ export default function PortalSidebar() {
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] max-h-screen border-r border-sidebar-border bg-sidebar lg:block">
       <div className="flex h-full max-h-screen flex-col overflow-hidden px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-primary text-primary-foreground">
-            <span className="text-sm font-semibold">L</span>
+          <div className="grid h-10 w-10 place-items-center">
+            <Image
+              src={logo}
+              alt="Loggy logo"
+              className="h-8 object-contain"
+              priority
+            />
           </div>
-          <div>
+          <div className="-mt-1">
             <div className="text-sm font-semibold text-sidebar-foreground">Loggy</div>
             <div className="text-xs text-muted-foreground">Portal</div>
           </div>

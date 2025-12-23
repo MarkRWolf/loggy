@@ -52,11 +52,17 @@ export default function JobsTable({
   jobs,
   onEdit,
   onDelete,
+  showActions = true,
 }: {
   jobs: Job[]
-  onEdit: (j: Job) => void
-  onDelete: (id: string) => void
+  onEdit?: (j: Job) => void
+  onDelete?: (id: string) => void
+  showActions?: boolean
 }) {
+  const cols = showActions ? 6 : 5
+  const handleEdit = onEdit ?? (() => {})
+  const handleDelete = onDelete ?? (() => {})
+
   return (
     <Card className="rounded-3xl border-border bg-card p-4">
       <Separator className="my-1 bg-border" />
@@ -70,7 +76,9 @@ export default function JobsTable({
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Relevance</TableHead>
               <TableHead className="text-muted-foreground">Added</TableHead>
-              <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+              {showActions ? (
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -110,30 +118,32 @@ export default function JobsTable({
 
                 <TableCell className="text-muted-foreground">{formatDate(j.createdAt)}</TableCell>
 
-                <TableCell className="text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="h-9 rounded-2xl border-input bg-card px-4"
-                      onClick={() => onEdit(j)}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="h-9 rounded-2xl border-input bg-card px-4"
-                      onClick={() => onDelete(j.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
+                {showActions ? (
+                  <TableCell className="text-right">
+                    <div className="inline-flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        className="h-9 rounded-2xl border-input bg-card px-4"
+                        onClick={() => handleEdit(j)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-9 rounded-2xl border-input bg-card px-4"
+                        onClick={() => handleDelete(j.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))}
 
             {!jobs.length ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={cols} className="py-10 text-center text-sm text-muted-foreground">
                   No results.
                 </TableCell>
               </TableRow>
