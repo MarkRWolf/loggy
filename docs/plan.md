@@ -191,7 +191,7 @@ No steps are skipped. No parallel work before prerequisites are done.
 - [x] All CRUD endpoints exist and enforce ownership.
 - [x] Auth required for all job endpoints.
 - [x] Can be tested without relying on mock data.
-- [ ] Frontend Zod and backend validation match 100% (including appliedAt + applicationSource + location + contactName).
+- [x] Frontend Zod and backend validation match 100% (including appliedAt + applicationSource + location + contactName).
 
 ---
 
@@ -277,9 +277,9 @@ No steps are skipped. No parallel work before prerequisites are done.
 
 ### Completion Check
 
-- [ ] `loggy.dk` renders marketing pages via ingress rewrite to `/landing/*`.
-- [ ] Marketing pages do not require auth.
-- [ ] Link from marketing → `portal.loggy.dk`.
+- [x] `loggy.dk` renders marketing pages via ingress rewrite to `/landing/*`.
+- [x] Marketing pages do not require auth.
+- [x] Link from marketing → `portal.loggy.dk`.
 
 ---
 
