@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Loggy Portal",
   description: "Track your job application pipeline",
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({
